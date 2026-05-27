@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>小学2年生 筆算プリント</title>
+<style>
+  /* === 画面表示用スタイル === */
+  :root {
+    --ink: #1a1a1a;
+    --line: #222;
+    --muted: #6b6b6b;
+    --bg: #f6f3ec;
+    --panel: #ffffff;
+    --accent: #d94f30;
+    --soft: #e8e2d3;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Hiragino Maru Gothic ProN", "Hiragino Maru Gothic Pro",
+                 "Yu Gothic UI", "YuGothic", "Meiryo", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* --- コントロールパネル(画面のみ) --- */
+  .controls {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--panel);
+    border-bottom: 2px solid var(--ink);
+    padding: 16px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    align-items: center;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.04);
+  }
+  .controls h1 {
+    margin: 0;
+    font-size: 16px;
+    letter-spacing: 0.05em;
+    padding-right: 16px;
+    border-right: 1px solid #ddd;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .field label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+  .field select, .field input[type="text"] {
+    padding: 6px 10px;
+    font-size: 14px;
+    border: 1.5px solid var(--ink);
+    background: #fff;
+    border-radius: 0;
+    font-family: inherit;
+  }
+  .btn {
+    padding: 10px 18px;
+    font-size: 14px;
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.05em;
+  }
+  .btn:hover { background: var(--accent); }
+  .btn.secondary {
+    background: #fff;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+  }
+  .btn.secondary:hover { background: var(--soft); }
+
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  /* --- プリント本体 --- */
+  .sheet-wrap {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .sheet {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 18mm 16mm 16mm 16mm;
+    background: #fff;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+  }
+  .sheet:last-child { page-break-after: auto; }
+
+  /* ヘッダー */
+  .sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+  }
+  .sheet-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .sheet-title small {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    margin-bottom: 2px;
+  }
+  .sheet-meta {
+    display: flex;
+    gap: 18px;
+    font-size: 13px;
+  }
+  .meta-item {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .meta-label {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+  .meta-line {
+    display: inline-block;
+    min-width: 110px;
+    border-bottom: 1.5px solid var(--ink);
+    height: 22px;
+  }
+
+  /* 問題グリッド */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14mm 8mm;
+    flex: 1;
+    padding-top: 6mm;
+  }
+
+  /* 1問のブロック */
+  .q {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4mm;
+  }
+  .q-num {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+
+  /* 筆算 */
+  .hissan {
+    display: inline-grid;
+    grid-template-columns: 8mm repeat(3, 9mm);
+    grid-template-rows: 9mm 9mm 2px 9mm;
+    align-items: center;
+    justify-items: center;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .hissan.with-grid .cell {
+    border: 1px dashed #c4b9a0;
+    width: 9mm;
+    height: 9mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hissan .cell { width: 9mm; height: 9mm; display: flex; align-items: center; justify-content: center; }
+  .hissan .op {
+    width: 8mm;
+    height: 9mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .hissan .bar {
+    grid-column: 1 / -1;
+    height: 2px;
+    background: var(--ink);
+    width: 100%;
+  }
+  .hissan .ans {
+    color: var(--ink);
+  }
+  .hissan .ans.blank { color: transparent; }
+
+  /* 解答ページ */
+  .sheet.answer .sheet-title { color: var(--accent); }
+  .sheet.answer .hissan .ans { color: var(--accent); }
+
+  /* フッター */
+  .sheet-footer {
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px dashed #bbb;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  /* === 印刷スタイル === */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  @media print {
+    body { background: #fff; }
+    .controls { display: none; }
+    .sheet-wrap { padding: 0; gap: 0; }
+    .sheet {
+      box-shadow: none;
+      width: 210mm;
+      height: 297mm;
+      min-height: 297mm;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 設定パネル ============ -->
+<div class="controls">
+  <h1>🧮 ひっ算プリント</h1>
+
+  <div class="field">
+    <label>けいさんの しゅるい</label>
+    <select id="opType">
+      <option value="add">たし算だけ</option>
+      <option value="sub">ひき算だけ</option>
+      <option value="mix" selected>たし算 + ひき算</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>くりあがり / くりさがり</label>
+    <select id="carryType">
+      <option value="none">なし</option>
+      <option value="yes">あり</option>
+      <option value="mix" selected>まぜる</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>もんだいの 数</label>
+    <select id="qCount">
+      <option value="9">9問（3×3）</option>
+      <option value="12" selected>12問（3×4）</option>
+      <option value="15">15問（3×5）</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>筆算の マス目</label>
+    <select id="grid">
+      <option value="yes" selected>あり（書きやすい）</option>
+      <option value="no">なし</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>タイトル</label>
+    <input type="text" id="title" value="2年生 ひっ算ドリル" size="14">
+  </div>
+
+  <div class="toggle">
+    <input type="checkbox" id="showAnswer" checked>
+    <label for="showAnswer">解答ページもつける</label>
+  </div>
+
+  <button class="btn" onclick="regenerate()">🎲 もんだいを 作る</button>
+  <button class="btn secondary" onclick="window.print()">🖨️ 印刷 / PDF保存</button>
+</div>
+
+<!-- ============ プリント本体 ============ -->
+<div class="sheet-wrap" id="sheetWrap"></div>
+
+<script>
+/* ========== 問題生成ロジック ========== */
+function rndInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// たし算：2桁 + 2桁
+//   carry: 'none' = 繰り上がりなし、'yes' = 一の位で繰り上がりあり
+function makeAdd(carry) {
+  let a, b;
+  if (carry === 'none') {
+    // 一の位の和 < 10、十の位の和 < 10 (3桁にならないように)
+    const a1 = rndInt(0, 8);
+    const b1 = rndInt(0, 9 - a1);
+    const a10 = rndInt(1, 8);
+    const b10 = rndInt(1, 9 - a10);
+    a = a10 * 10 + a1;
+    b = b10 * 10 + b1;
+  } else {
+    // 一の位で繰り上がりあり (a1 + b1 >= 10)
+    const a1 = rndInt(1, 9);
+    const b1 = rndInt(10 - a1, 9);
+    const a10 = rndInt(1, 8);
+    const b10 = rndInt(1, 9 - a10 - 1); // 答えが100超えないように
+    a = a10 * 10 + a1;
+    b = Math.max(10, b10 * 10) + b1;
+    if (b < 10) b += 10;
+  }
+  return { a, b, op: '+', ans: a + b };
+}
+
+// ひき算：2桁 - 2桁（答え正、被減数 > 減数）
+function makeSub(borrow) {
+  let a, b;
+  if (borrow === 'none') {
+    // 各位で a >= b、結果は正
+    const a10 = rndInt(2, 9);
+    const b10 = rndInt(1, a10);
+    const a1 = rndInt(0, 9);
+    const b1 = rndInt(0, a1);
+    a = a10 * 10 + a1;
+    b = b10 * 10 + b1;
+    if (a === b) a += 10; // 同じ数は避ける
+  } else {
+    // 一の位で繰り下がりあり (a1 < b1)
+    const b1 = rndInt(1, 9);
+    const a1 = rndInt(0, b1 - 1);
+    const a10 = rndInt(2, 9);
+    const b10 = rndInt(1, a10 - 1); // 確実に a > b
+    a = a10 * 10 + a1;
+    b = b10 * 10 + b1;
+  }
+  return { a, b, op: '-', ans: a - b };
+}
+
+function makeProblem(opType, carryType) {
+  // opType: 'add' | 'sub' | 'mix'
+  // carryType: 'none' | 'yes' | 'mix'
+  let useAdd;
+  if (opType === 'add') useAdd = true;
+  else if (opType === 'sub') useAdd = false;
+  else useAdd = Math.random() < 0.5;
+
+  let carry;
+  if (carryType === 'none') carry = 'none';
+  else if (carryType === 'yes') carry = 'yes';
+  else carry = Math.random() < 0.5 ? 'none' : 'yes';
+
+  return useAdd ? makeAdd(carry) : makeSub(carry);
+}
+
+function generateProblems(n, opType, carryType) {
+  const out = [];
+  const seen = new Set();
+  let safety = 0;
+  while (out.length < n && safety < n * 20) {
+    const p = makeProblem(opType, carryType);
+    const key = `${p.a}${p.op}${p.b}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(p);
+    }
+    safety++;
+  }
+  return out;
+}
+
+/* ========== 描画 ========== */
+function digits(n) {
+  // 3桁まで対応、足りない桁は空白
+  const s = String(n);
+  const arr = s.split('');
+  while (arr.length < 3) arr.unshift('');
+  return arr;
+}
+
+function hissanHTML(p, showAns, gridOn) {
+  const ad = digits(p.a);
+  const bd = digits(p.b);
+  const ans = digits(p.ans);
+  const cls = gridOn ? 'hissan with-grid' : 'hissan';
+  const ansCls = showAns ? 'ans' : 'ans blank';
+
+  return `
+    <div class="${cls}">
+      <div class="op"></div>
+      ${ad.map(d => `<div class="cell">${d}</div>`).join('')}
+      <div class="op">${p.op}</div>
+      ${bd.map(d => `<div class="cell">${d}</div>`).join('')}
+      <div class="bar"></div>
+      <div class="op"></div>
+      ${ans.map(d => `<div class="cell ${ansCls}">${d}</div>`).join('')}
+    </div>
+  `;
+}
+
+function sheetHTML(problems, title, isAnswer, gridOn) {
+  const subtitle = isAnswer ? 'こたえ' : 'もんだい';
+  const meta = isAnswer ? '' : `
+    <div class="sheet-meta">
+      <div class="meta-item"><span class="meta-label">なまえ</span><span class="meta-line"></span></div>
+      <div class="meta-item"><span class="meta-label">ひづけ</span><span class="meta-line"></span></div>
+    </div>`;
+
+  const items = problems.map((p, i) => `
+    <div class="q">
+      <div class="q-num">(${i + 1})</div>
+      ${hissanHTML(p, isAnswer, gridOn)}
+    </div>
+  `).join('');
+
+  const today = new Date();
+  const stamp = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  return `
+    <div class="sheet ${isAnswer ? 'answer' : ''}">
+      <div class="sheet-header">
+        <div class="sheet-title">
+          <small>${subtitle}</small>
+          ${title}
+        </div>
+        ${meta}
+      </div>
+      <div class="grid">${items}</div>
+      <div class="sheet-footer">
+        <span>${problems.length}問</span>
+        <span>generated ${stamp}</span>
+      </div>
+    </div>
+  `;
+}
+
+/* ========== コントロール ========== */
+function regenerate() {
+  const opType = document.getElementById('opType').value;
+  const carryType = document.getElementById('carryType').value;
+  const n = parseInt(document.getElementById('qCount').value, 10);
+  const gridOn = document.getElementById('grid').value === 'yes';
+  const title = document.getElementById('title').value || '2年生 ひっ算ドリル';
+  const showAnswer = document.getElementById('showAnswer').checked;
+
+  const problems = generateProblems(n, opType, carryType);
+
+  let html = sheetHTML(problems, title, false, gridOn);
+  if (showAnswer) {
+    html += sheetHTML(problems, title, true, gridOn);
+  }
+  document.getElementById('sheetWrap').innerHTML = html;
+}
+
+// 初回生成
+regenerate();
+</script>
+
+</body>
+</html>
